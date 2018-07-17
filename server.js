@@ -100,7 +100,7 @@ app.post('/signup', (req, res) => {  //handles new user signup
 				bcrypt.hash(passText, salt, (err, hash) => {
 					uObj['password'] = hash;
 
-					col.insertOne(uObj, (err, r) => {
+					db.collection(collName).insertOne(uObj, (err, r) => {
 						if(err) return err;
 						assert.equal(1, r.insertedCount);
 						insertBool = true;
