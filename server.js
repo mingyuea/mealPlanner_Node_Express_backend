@@ -2,10 +2,12 @@ const express = require('express');
 const MongoClient = require('mongodb').MongoClient;
 const bodyParser = require('body-parser');
 const assert = require('assert');
+const bcrypt = require('bcrypt');
 
 const dbUrl = process.env.MONGODB_URI || 'mongodb://mingyue:Secure1@ds018558.mlab.com:18558/expressmp';
 const dbName = 'expressmp';
 const collName = 'mealPlanner';
+const saltRounds = 15;
 
 const app = express();
 
@@ -44,12 +46,15 @@ app.post('/login', (req, res) => {  //handles app login
 		}
 		else{
 			let hash = result[0].password;
-				if(hash == passText){
+			
+			bcrypt.compare(passText, hash).then(passBool => {
+				if(passBool){
 					res.send({"login": true, "meals": result[0].meals});
 				}
 				else{
 					res.send({"login": false});
-				}	
+				}
+			});	
 		}
 	});
 });
@@ -91,14 +96,18 @@ app.post('/signup', (req, res) => {  //handles new user signup
 			res.send({'openName': false});
 		}
 		else{
-					uObj['password'] = passText;
+			bcrypt.genSalt(saltRounds, (err, salt) => {
+				bcrypt.hash(passText, salt, (err, hash) => {
+					uObj['password'] = hash;
 
-					db.collection(collName).insertOne(uObj, (err, r) => {
+					col.insertOne(uObj, (err, r) => {
 						if(err) return err;
 						assert.equal(1, r.insertedCount);
 						insertBool = true;
 						res.send({'openName': true});
-					});	
+					});
+				});
+			});
 		}
 	});
 });
